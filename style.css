@@ -1,0 +1,123 @@
+/* Basic Reset and Root Variables */
+:root {
+    --primary-color: #d4a373; /* A warm, earthy tone */
+    --secondary-color: #fefae0; /* Creamy background */
+    --text-color: #333;
+    --card-bg: #ffffff;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+    --font-family: 'Poppins', sans-serif;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-family);
+    background-color: var(--secondary-color);
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Header and Footer */
+.site-header, .site-footer {
+    text-align: center;
+    padding: 2rem 0;
+    background-color: var(--card-bg);
+}
+
+.site-header h1 {
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.site-header p {
+    font-size: 1.1rem;
+    color: #666;
+}
+
+/* Product Grid Layout */
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+    padding: 3rem 0;
+}
+
+.loading-message {
+    grid-column: 1 / -1; /* Span all columns */
+    text-align: center;
+    font-size: 1.2rem;
+    padding: 2rem;
+}
+
+/* Product Card Styling */
+.product-card {
+    background: var(--card-bg);
+    border-radius: 10px;
+    box-shadow: 0 4px 15px var(--shadow-color);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px var(--shadow-color);
+}
+
+.product-card img {
+    width: 100%;
+    height: 250px;
+    object-fit: cover; /* Ensures images are uniform without distortion */
+    display: block;
+}
+
+.product-info {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1; /* Allows this container to grow and push the button down */
+}
+
+.product-name {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.product-price {
+    font-size: 1.1rem;
+    color: var(--primary-color);
+    font-weight: 600;
+    margin-top: auto; /* Pushes price to the bottom of this container */
+    margin-bottom: 1rem;
+}
+
+.buy-button {
+    display: block;
+    width: 100%;
+    padding: 0.8rem 1rem;
+    background-color: var(--primary-color);
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.buy-button:hover {
+    background-color: #c38e5f; /* A slightly darker shade for hover */
+}
