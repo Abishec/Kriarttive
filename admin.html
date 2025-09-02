@@ -1,159 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kriarttive Admin Panel</title>
-  <link rel="stylesheet" href="style.css" />
-  <style>
-    body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; }
-    .login-box, .admin-box { max-width: 600px; margin: auto; background: #fff; padding: 20px; border-radius: 10px; }
-    h2 { text-align: center; }
-    input, button, textarea { width: 100%; padding: 10px; margin: 5px 0; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    table, th, td { border: 1px solid #ccc; }
-    th, td { padding: 8px; text-align: left; }
-    img { max-width: 80px; }
-    .hidden { display: none; }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <h1>Admin Panel</h1>
 
-<div class="login-box" id="loginBox">
-  <h2>Admin Login</h2>
-  <input type="email" id="email" placeholder="Enter email" />
-  <input type="password" id="password" placeholder="Enter password" />
-  <button onclick="login()">Login</button>
-  <p id="loginMsg" style="color:red;"></p>
-</div>
+  <div id="loginSection">
+    <h2>Login</h2>
+    <input type="email" id="adminEmail" placeholder="Email" required>
+    <input type="password" id="adminPassword" placeholder="Password" required>
+    <button id="loginBtn">Login</button>
+    <p id="loginMessage"></p>
+  </div>
 
-<div class="admin-box hidden" id="adminBox">
-  <h2>Welcome Admin</h2>
-  <button onclick="logout()">Logout</button>
+  <div id="adminSection" style="display:none;">
+    <h2>Add Product</h2>
+    <form id="productForm">
+      <input type="text" id="productName" placeholder="Product Name" required>
+      <input type="text" id="productPrice" placeholder="Price" required>
+      <input type="file" id="productImage" accept="image/*" required>
+      <textarea id="productDescription" placeholder="Description"></textarea>
+      <button type="submit">Add Product</button>
+    </form>
 
-  <h3>Add New Product</h3>
-  <input type="text" id="pName" placeholder="Product Name" />
-  <input type="number" id="pPrice" placeholder="Price (NPR)" />
-  <input type="file" id="pImage" accept="image/*" />
-  <textarea id="pDesc" placeholder="Description"></textarea>
-  <button onclick="addProduct()">Add Product</button>
-  <p id="addMsg" style="color:green;"></p>
+    <h2>Customer Requests</h2>
+    <div id="requestsList"></div>
+  </div>
 
-  <h3>Products</h3>
-  <table id="productsTable">
-    <thead>
-      <tr><th>Image</th><th>Name</th><th>Price</th><th>Description</th><th>Actions</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
-  <h3>Customer Requests</h3>
-  <table id="requestsTable">
-    <thead>
-      <tr><th>Timestamp</th><th>Name</th><th>Phone</th><th>Address</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
-
-<script>
-const SCRIPT_URL = "YOUR_SCRIPT_URL"; 
-const ADMINS = ["abishecshah70@gmail.com", "rennybaniya@gmail.com"];
-const PASSWORD = "Jaleshwaram@1";
-
-function login() {
-  const email = document.getElementById("email").value.trim();
-  const pass = document.getElementById("password").value.trim();
-  if (ADMINS.includes(email) && pass === PASSWORD) {
-    localStorage.setItem("admin", email);
-    document.getElementById("loginBox").classList.add("hidden");
-    document.getElementById("adminBox").classList.remove("hidden");
-    loadProducts();
-    loadRequests();
-  } else {
-    document.getElementById("loginMsg").innerText = "Invalid login!";
-  }
-}
-
-function logout() {
-  localStorage.removeItem("admin");
-  document.getElementById("loginBox").classList.remove("hidden");
-  document.getElementById("adminBox").classList.add("hidden");
-}
-
-window.onload = () => {
-  if (localStorage.getItem("admin")) {
-    document.getElementById("loginBox").classList.add("hidden");
-    document.getElementById("adminBox").classList.remove("hidden");
-    loadProducts();
-    loadRequests();
-  }
-};
-
-async function addProduct() {
-  const name = document.getElementById("pName").value;
-  const price = document.getElementById("pPrice").value;
-  const desc = document.getElementById("pDesc").value;
-  const file = document.getElementById("pImage").files[0];
-  if (!name || !price || !file) {
-    alert("Please fill all fields and select an image");
-    return;
-  }
-
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("name", name);
-  formData.append("price", price);
-  formData.append("description", desc);
-
-  const res = await fetch(SCRIPT_URL + "?function=uploadProduct", { method: "POST", body: formData });
-  const data = await res.json();
-  if (data.ok) {
-    document.getElementById("addMsg").innerText = "Product added!";
-    loadProducts();
-  } else {
-    alert("Error: " + data.error);
-  }
-}
-
-async function loadProducts() {
-  const res = await fetch(SCRIPT_URL + "?function=getProducts");
-  const products = await res.json();
-  const tbody = document.querySelector("#productsTable tbody");
-  tbody.innerHTML = "";
-  products.forEach((p, i) => {
-    const row = `<tr>
-      <td><img src="${p["image url"]}" /></td>
-      <td>${p.Name}</td>
-      <td>₨${p.Price}</td>
-      <td>${p.Description}</td>
-      <td><button onclick="deleteProduct(${i})">Delete</button></td>
-    </tr>`;
-    tbody.innerHTML += row;
-  });
-}
-
-async function deleteProduct(i) {
-  if (!confirm("Delete this product?")) return;
-  const res = await fetch(SCRIPT_URL + "?function=deleteProduct&rowIndex=" + i);
-  const data = await res.json();
-  if (data.ok) loadProducts();
-}
-
-async function loadRequests() {
-  const res = await fetch(SCRIPT_URL + "?function=getRequests");
-  const requests = await res.json();
-  const tbody = document.querySelector("#requestsTable tbody");
-  tbody.innerHTML = "";
-  requests.forEach(r => {
-    tbody.innerHTML += `<tr>
-      <td>${r.Timestamp}</td>
-      <td>${r["customer name"]}</td>
-      <td>${r.Phone}</td>
-      <td>${r.Address}</td>
-    </tr>`;
-  });
-}
-</script>
+  <script src="script.js"></script>
 </body>
 </html>
