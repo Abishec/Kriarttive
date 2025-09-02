@@ -1,42 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kriarttive Store</title>
-  <link rel="stylesheet" href="style.css" />
-  <style>
-    body { font-family: Arial, sans-serif; background: #f9f9f9; padding: 20px; }
-    .product { background: #fff; padding: 15px; margin: 10px; border-radius: 8px; box-shadow: 0 0 5px #ccc; }
-    img { max-width: 100%; height: auto; border-radius: 5px; }
-    h2 { margin: 0; }
-    button { background: #333; color: #fff; border: none; padding: 10px; border-radius: 5px; cursor: pointer; }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product Store</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Kriarttive Products</h1>
-  <div id="productList"></div>
+  <h1>Welcome to Our Store</h1>
+  <div id="product-list"></div>
 
-  <script>
-    const SCRIPT_URL = "YOUR_SCRIPT_URL"; // same as in admin
+  <h2>Request a Product</h2>
+  <form id="requestForm">
+    <input type="text" id="reqName" placeholder="Your Name" required>
+    <input type="text" id="reqPhone" placeholder="Phone Number" required>
+    <input type="text" id="reqAddress" placeholder="Address" required>
+    <button type="submit">Submit Request</button>
+  </form>
 
-    async function loadProducts() {
-      const res = await fetch(SCRIPT_URL + "?function=getProducts");
-      const products = await res.json();
-      const container = document.getElementById("productList");
-      container.innerHTML = "";
-      products.forEach(p => {
-        container.innerHTML += `
-          <div class="product">
-            <img src="${p["image url"]}" alt="${p.Name}">
-            <h2>${p.Name}</h2>
-            <p>₨${p.Price}</p>
-            <p>${p.Description}</p>
-          </div>
-        `;
-      });
-    }
-    loadProducts();
-  </script>
+  <script src="script.js"></script>
 </body>
 </html>
