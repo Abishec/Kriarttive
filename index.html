@@ -2,35 +2,41 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Kriarttive – Handmade Creations</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kriarttive Store</title>
   <link rel="stylesheet" href="style.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: Arial, sans-serif; background: #f9f9f9; padding: 20px; }
+    .product { background: #fff; padding: 15px; margin: 10px; border-radius: 8px; box-shadow: 0 0 5px #ccc; }
+    img { max-width: 100%; height: auto; border-radius: 5px; }
+    h2 { margin: 0; }
+    button { background: #333; color: #fff; border: none; padding: 10px; border-radius: 5px; cursor: pointer; }
+  </style>
 </head>
 <body>
-  <header class="site-header">
-    <div class="container">
-      <h1>Kriarttive</h1>
-      <p>Handmade with love and creativity</p>
-    </div>
-  </header>
+  <h1>Kriarttive Products</h1>
+  <div id="productList"></div>
 
-  <main>
-    <div class="container">
-      <div id="product-grid" class="product-grid">
-        <div class="loading-message">Loading products...</div>
-      </div>
-    </div>
-  </main>
+  <script>
+    const SCRIPT_URL = "YOUR_SCRIPT_URL"; // same as in admin
 
-  <footer class="site-footer">
-    <div class="container">
-      <p>&copy; 2025 Kriarttive. All rights reserved.</p>
-    </div>
-  </footer>
-
-  <script src="script.js"></script>
+    async function loadProducts() {
+      const res = await fetch(SCRIPT_URL + "?function=getProducts");
+      const products = await res.json();
+      const container = document.getElementById("productList");
+      container.innerHTML = "";
+      products.forEach(p => {
+        container.innerHTML += `
+          <div class="product">
+            <img src="${p["image url"]}" alt="${p.Name}">
+            <h2>${p.Name}</h2>
+            <p>₨${p.Price}</p>
+            <p>${p.Description}</p>
+          </div>
+        `;
+      });
+    }
+    loadProducts();
+  </script>
 </body>
 </html>
