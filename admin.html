@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Kriarttive Admin</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <h1>Kriarttive — Admin</h1>
+      <p>Admin panel — add / edit products and view requests</p>
+    </div>
+  </header>
+
+  <main>
+    <div class="container admin-container">
+      <!-- Simple password gate -->
+      <div id="login-box" class="card">
+        <h2>Admin Login</h2>
+        <input id="admin-password" type="password" placeholder="Enter admin password" />
+        <button id="login-btn">Login</button>
+        <p style="font-size:0.9rem;color:#666;margin-top:0.6rem;">(Password stored in this file — change before publishing publicly.)</p>
+      </div>
+
+      <div id="admin-area" style="display:none;">
+        <!-- Add / Edit form -->
+        <section class="card">
+          <h2 id="form-title">Add Product</h2>
+          <form id="product-form">
+            <input id="p-name" placeholder="Name" required />
+            <input id="p-price" placeholder="Price (number)" type="number" step="0.01" required />
+            <input id="p-image" placeholder="Image URL" type="url" />
+            <textarea id="p-desc" rows="4" placeholder="Description"></textarea>
+            <div style="display:flex;gap:8px;">
+              <button type="submit" id="save-btn">Save</button>
+              <button type="button" id="cancel-edit" style="display:none;">Cancel</button>
+            </div>
+            <input type="hidden" id="editing-index" value="-1" />
+          </form>
+        </section>
+
+        <!-- Products list / manage -->
+        <section class="card">
+          <h2>Products</h2>
+          <div id="admin-products"></div>
+        </section>
+
+        <!-- Requests -->
+        <section class="card">
+          <h2>Requests</h2>
+          <div id="requests-list">Loading requests...</div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>&copy; 2025 Kriarttive. All rights reserved.</p>
+    </div>
+  </footer>
+
+<script>
+/* ===========================
+  Replace with your deployed Apps Script Web App URL
+  (the one you gave earlier)
+=========================== */
+const WEBAPP_URL = "YOUR_WEBAPP_URL_HERE";
+
+/* Simple client-side admin password — change this string before publishing */
+const ADMIN_PASSWORD = "kriadmin123";
+
+/* Helper fetch wrapper */
+async function apiCall(params) {
+  const url = new URL(WEBAPP_URL);
+  Object.keys(params).forEach(k => url.searchParams.append(k, params[k]));
+  const res = await fetch(url.toString());
+  return res.json();
+}
+
+/* Login logic */
+document.getElementById('login-btn').addEventListener('click', ()=> {
+  const val = document.getElementById('admin-password').value;
+  if (val === ADMIN_PASSWORD) {
+    document.getElementById('login-box').style.display = 'none';
+    document.getElementById('admin-area').style.display = 'block';
+    loadProductsForAdmin();
+    loadRequests();
+  } else {
+    alert('Wrong password');
+  }
+});
+
+/* Load products for admin */
+async function loadProductsForAdmin() {
+  const r = await apiCall({function: 'getProducts'});
+  const products = r;
+  const container = document.getElementById('admin-products');
+  container.innerHTML = '';
+  if (!Array.isArray(products) || products.length === 0) {
+    container.innerHTML = '<p>No products found.</p>';
+    return;
+  }
+  products.forEach((p, idx) => {
+    const div = document.createElement('div');
+    div.className = 'admin-product';
+    div.innerHTML = `
+      <img src="${p.ImageURL || ''}" alt="${p.Name || ''}">
+      <div class="admin-product-info">
+        <strong>${p.Name || ''}</strong>
+        <div>Price: NPR ${p.Price || ''}</div>
+        <div class="admin-actions">
+          <button data-idx="${idx}" class="edit-btn">Edit</button>
+          <button data-idx="${idx}" class="delete-btn">Delete</button>
+        </div>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+
+  // attach listeners
+  document.querySelectorAll('.edit-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const idx = e.target.dataset.idx;
+      const product = products[idx];
+      document.getElementById('p-name').value = product.Name || '';
+      document.getElementById('p-price').value = product.Price || '';
+      document.getElementById('p-image').value = product.ImageURL || '';
+      document.getElementById('p-desc').value = product.Description || '';
+      document.getElementById('editing-index').value = idx;
+      document.getElementById('form-title').innerText = 'Edit Product';
+      document.getElementById('cancel-edit').style.display = 'inline-block';
+      document.getElementById('save-btn').innerText = 'Update';
+    });
+  });
+
+  document.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const idx = e.target.dataset.idx;
+      if (!confirm('Delete this product?')) return;
+      await apiCall({function:'deleteProduct', rowIndex: idx});
+      alert('Deleted');
+      loadProductsForAdmin();
+    });
+  });
+}
+
+/* Handle form submit add / update */
+document.getElementById('product-form').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  const name = document.getElementById('p-name').value.trim();
+  const price = document.getElementById('p-price').value;
+  const image = document.getElementById('p-image').value.trim();
+  const desc = document.getElementById('p-desc').value.trim();
+  const editing = Number(document.getElementById('editing-index').value);
+
+  if (editing >= 0) {
+    // update
+    await apiCall({function:'updateProduct', rowIndex: editing, name, price, imageURL: image, description: desc});
+    alert('Updated');
+  } else {
+    // add
+    await apiCall({function:'addProduct', name, price, imageURL: image, description: desc});
+    alert('Added');
+  }
+  // reset
+  document.getElementById('product-form').reset();
+  document.getElementById('editing-index').value = -1;
+  document.getElementById('form-title').innerText = 'Add Product';
+  document.getElementById('cancel-edit').style.display = 'none';
+  document.getElementById('save-btn').innerText = 'Save';
+  loadProductsForAdmin();
+});
+
+/* Cancel edit */
+document.getElementById('cancel-edit').addEventListener('click', () => {
+  document.getElementById('product-form').reset();
+  document.getElementById('editing-index').value = -1;
+  document.getElementById('form-title').innerText = 'Add Product';
+  document.getElementById('cancel-edit').style.display = 'none';
+  document.getElementById('save-btn').innerText = 'Save';
+});
+
+/* Load requests */
+async function loadRequests() {
+  const r = await apiCall({function:'getRequests'});
+  const list = r;
+  const el = document.getElementById('requests-list');
+  if (!Array.isArray(list) || list.length === 0) {
+    el.innerHTML = '<p>No requests yet.</p>';
+    return;
+  }
+  el.innerHTML = '<table class="requests-table"><thead><tr><th>Timestamp</th><th>Name</th><th>Phone</th><th>Address</th></tr></thead><tbody>' +
+    list.map(x => `<tr><td>${x.Timestamp}</td><td>${x["Customer Name"] || x.CustomerName || ''}</td><td>${x["Phone Number"] || x.Phone || ''}</td><td>${x.Address || ''}</td></tr>`).join('') +
+    '</tbody></table>';
+}
+
+/* On load: nothing (wait for login) */
+</script>
+</body>
+</html>
