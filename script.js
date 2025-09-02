@@ -1,7 +1,7 @@
 /* Public site script: loads products from Apps Script webapp
    Replace with your webapp URL
 */
-const WEBAPP_URL = "YOUR_WEBAPP_URL_HERE";
+const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxJBftEFIE3nE0VzAl4E3GdhlxWdQudvFAlm2ULwAJ56MtMAZW1OkkiwSvGVeTVhJz7/exec";
 
 async function loadProducts() {
   const grid = document.getElementById('product-grid');
