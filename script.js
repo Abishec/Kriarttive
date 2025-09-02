@@ -1,45 +1,117 @@
-/* Public site script: loads products from Apps Script webapp
-   Replace with your webapp URL
-*/
-const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxJBftEFIE3nE0VzAl4E3GdhlxWdQudvFAlm2ULwAJ56MtMAZW1OkkiwSvGVeTVhJz7/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwQuhi8_Y6Cft51cZ7xTvmu1UtqVQngfWeEvs88WXF2htJzKwVSpbWwb115DtvB6Y0/exec";
 
-async function loadProducts() {
-  const grid = document.getElementById('product-grid');
-  try {
-    grid.innerHTML = '<div class="loading-message">Loading products...</div>';
-    const url = new URL(WEBAPP_URL);
-    url.searchParams.append('function', 'getProducts');
-    const res = await fetch(url.toString());
-    const products = await res.json();
-    if (!Array.isArray(products) || products.length === 0) {
-      grid.innerHTML = '<div class="loading-message">No products found.</div>';
-      return;
-    }
-    grid.innerHTML = '';
-    products.forEach(p => {
-      const card = document.createElement('div');
-      card.className = 'product-card';
-      const img = p.ImageURL || '';
-      const desc = p.Description || '';
-      const price = p.Price || '';
-      // show NPR currency
-      const formatted = (price !== '' && !isNaN(Number(price))) ? `NPR ${Number(price).toFixed(2)}` : `NPR ${price}`;
-      card.innerHTML = `
-        <img src="${img}" alt="${(p.Name || '').replace(/"/g,'')}" onerror="this.src='https://via.placeholder.com/400x300?text=No+Image'">
-        <div class="product-info">
-          <div class="product-name">${p.Name || ''}</div>
-          <div class="product-price">${formatted}</div>
-          <p style="margin-top:8px;font-size:0.95rem;color:#444">${desc}</p>
-        </div>
-        <a class="buy-button" href="https://docs.google.com/forms/d/e/1FAIpQLSeA8mIg6Lz99bwGVNT9lsKTvvBh3efvhKqHzdjQjoHz02MiaA/viewform?usp=sharing" target="_blank">Request to Buy</a>
-      `;
-      grid.appendChild(card);
-    });
-  } catch (err) {
-    grid.innerHTML = '<div class="loading-message">Error loading products. Check API URL and permissions.</div>';
-    console.error(err);
+// ========== CUSTOMER SIDE ==========
+document.addEventListener("DOMContentLoaded", () => {
+  if (document.getElementById("product-list")) {
+    loadProducts();
   }
+
+  if (document.getElementById("requestForm")) {
+    document.getElementById("requestForm").addEventListener("submit", submitRequest);
+  }
+
+  if (document.getElementById("loginBtn")) {
+    document.getElementById("loginBtn").addEventListener("click", loginAdmin);
+  }
+
+  if (document.getElementById("productForm")) {
+    document.getElementById("productForm").addEventListener("submit", addProduct);
+  }
+});
+
+// Load products for customers
+function loadProducts() {
+  fetch(API_URL + "?action=getProducts")
+    .then(res => res.json())
+    .then(data => {
+      const list = document.getElementById("product-list");
+      list.innerHTML = "";
+      data.forEach(p => {
+        const card = document.createElement("div");
+        card.className = "product-card";
+        card.innerHTML = `
+          <img src="${p.image}" alt="${p.name}">
+          <h3>${p.name}</h3>
+          <p>Price: ${p.price}</p>
+          <p>${p.description}</p>
+        `;
+        list.appendChild(card);
+      });
+    });
 }
 
-// load on page ready
-document.addEventListener('DOMContentLoaded', loadProducts);
+// Submit customer request
+function submitRequest(e) {
+  e.preventDefault();
+  const formData = new FormData();
+  formData.append("action", "addRequest");
+  formData.append("name", document.getElementById("reqName").value);
+  formData.append("phone", document.getElementById("reqPhone").value);
+  formData.append("address", document.getElementById("reqAddress").value);
+
+  fetch(API_URL, { method: "POST", body: formData })
+    .then(res => res.json())
+    .then(data => {
+      alert("Request submitted successfully!");
+      document.getElementById("requestForm").reset();
+    });
+}
+
+// ========== ADMIN SIDE ==========
+
+// Admin login
+function loginAdmin() {
+  const formData = new FormData();
+  formData.append("action", "login");
+  formData.append("email", document.getElementById("adminEmail").value);
+  formData.append("password", document.getElementById("adminPassword").value);
+
+  fetch(API_URL, { method: "POST", body: formData })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        document.getElementById("loginSection").style.display = "none";
+        document.getElementById("adminSection").style.display = "block";
+        loadRequests();
+      } else {
+        document.getElementById("loginMessage").innerText = "Invalid login!";
+      }
+    });
+}
+
+// Add product (with image upload)
+function addProduct(e) {
+  e.preventDefault();
+  const formData = new FormData();
+  formData.append("action", "addProduct");
+  formData.append("name", document.getElementById("productName").value);
+  formData.append("price", document.getElementById("productPrice").value);
+  formData.append("description", document.getElementById("productDescription").value);
+  formData.append("file", document.getElementById("productImage").files[0]);
+
+  fetch(API_URL, { method: "POST", body: formData })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        alert("Product added successfully!");
+        document.getElementById("productForm").reset();
+      } else {
+        alert("Error: " + data.error);
+      }
+    });
+}
+
+// Load customer requests for admin
+function loadRequests() {
+  fetch(API_URL + "?action=getRequests")
+    .then(res => res.json())
+    .then(data => {
+      const list = document.getElementById("requestsList");
+      list.innerHTML = "";
+      data.forEach(r => {
+        const div = document.createElement("div");
+        div.innerHTML = `<p><strong>${r.name}</strong> (${r.phone}) - ${r.address}</p>`;
+        list.appendChild(div);
+      });
+    });
+}
