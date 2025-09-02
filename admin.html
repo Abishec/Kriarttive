@@ -1,163 +1,116 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Kriarttive Admin</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .hidden { display: none; }
+    .btn { background: #4CAF50; color: white; padding: 8px 12px; border: none; cursor: pointer; margin: 4px; }
+    .btn-danger { background: red; }
+    input, textarea { padding: 6px; margin: 4px 0; width: 100%; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    table, th, td { border: 1px solid #ccc; }
+    th, td { padding: 8px; text-align: left; }
+    img { max-height: 50px; }
+  </style>
 </head>
 <body>
-  <header class="site-header">
-    <div class="container">
-      <h1>Kriarttive — Admin Panel</h1>
-      <p>Upload products with images, manage items, and view requests</p>
-    </div>
-  </header>
+  <h1>Admin Panel</h1>
 
-  <main>
-    <div class="container admin-container">
-      <!-- Admin login -->
-      <div id="login-box" class="card">
-        <h2>Admin Login</h2>
-        <input id="admin-password" type="password" placeholder="Enter admin password" />
-        <button id="login-btn">Login</button>
-        <p style="font-size:0.9rem;color:#666;margin-top:0.6rem;">
-          (Change ADMIN_PASSWORD below before publishing)
-        </p>
-      </div>
+  <!-- LOGIN -->
+  <div id="login-container">
+    <h2>Login</h2>
+    <input type="email" id="adminEmail" placeholder="Enter email">
+    <input type="password" id="adminPassword" placeholder="Enter password">
+    <button class="btn" onclick="login()">Login</button>
+    <p id="loginMessage" style="color:red"></p>
+  </div>
 
-      <!-- Admin area (hidden until login) -->
-      <div id="admin-area" style="display:none;">
-        <!-- Upload form -->
-        <section class="card">
-          <h2>Upload New Product</h2>
-          <form id="upload-form">
-            <input id="prod-name" placeholder="Product Name" required /><br/>
-            <input id="prod-price" type="number" step="0.01" placeholder="Price" required /><br/>
-            <input id="prod-desc" placeholder="Description" /><br/>
-            <input id="prod-image" type="file" accept="image/*" required /><br/>
-            <button type="submit">Upload Product</button>
-          </form>
-        </section>
+  <!-- ADMIN PANEL -->
+  <div id="adminPanel" class="hidden">
+    <h2>Add / Update Product</h2>
+    <form id="productForm">
+      <input type="hidden" id="rowIndex">
+      <input type="text" id="name" placeholder="Product Name" required>
+      <input type="number" id="price" placeholder="Price" required>
+      <textarea id="description" placeholder="Description"></textarea>
+      <input type="file" id="imageFile" accept="image/*">
+      <button type="submit" class="btn">Save Product</button>
+    </form>
 
-        <!-- Product management -->
-        <section class="card">
-          <h2>Manage Products</h2>
-          <div id="products-list">Loading products...</div>
-        </section>
+    <h2>Products</h2>
+    <table id="productsTable">
+      <thead>
+        <tr>
+          <th>Image</th>
+          <th>Name</th>
+          <th>Price</th>
+          <th>Description</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
-        <!-- View requests -->
-        <section class="card">
-          <h2>Customer Requests</h2>
-          <div id="requests-list">Loading requests...</div>
-        </section>
-      </div>
-    </div>
-  </main>
+  <script>
+    const ADMIN_EMAILS = [
+      "your-first-admin@gmail.com",
+      "your-second-admin@gmail.com"
+    ]; // replace with your two admin emails
+    const ADMIN_PASSWORD = "Jaleshwaram@1"; 
+    const SCRIPT_URL = "YOUR_WEB_APP_URL"; // replace with your Apps Script Web App URL
 
-  <footer class="site-footer">
-    <div class="container">
-      <p>&copy; 2025 Kriarttive. All rights reserved.</p>
-    </div>
-  </footer>
+    function login() {
+      const email = document.getElementById("adminEmail").value.trim();
+      const password = document.getElementById("adminPassword").value;
 
-<script>
-/* ======= CONFIGURATION ======= */
-const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwMz8e5nQHuA6GJR7dhqYQ4KAwEstxUupawjOCtOrYHOlcIM-ETfKadrdzvHwyjdinx/exec";
-const ADMIN_PASSWORD = "your_admin_password"; // Change this to a password you choose
-/* =============================== */
-
-// Utility to call GET endpoints
-async function apiGet(params) {
-  const url = new URL(WEBAPP_URL);
-  Object.keys(params).forEach(k => url.searchParams.append(k, params[k]));
-  const res = await fetch(url.toString());
-  return res.json();
-}
-
-// Utility to call POST for upload
-async function apiPost(formData) {
-  const res = await fetch(WEBAPP_URL, { method: "POST", body: formData });
-  return res.json();
-}
-
-/* ====== LOGIN ====== */
-document.getElementById('login-btn').onclick = () => {
-  if (document.getElementById('admin-password').value === ADMIN_PASSWORD) {
-    document.getElementById('login-box').style.display = 'none';
-    document.getElementById('admin-area').style.display = 'block';
-    loadProducts();
-    loadRequests();
-  } else {
-    alert('Incorrect password');
-  }
-};
-
-/* ====== UPLOAD PRODUCT HANDLER ====== */
-document.getElementById('upload-form').onsubmit = async (ev) => {
-  ev.preventDefault();
-  const name = document.getElementById('prod-name').value.trim();
-  const price = document.getElementById('prod-price').value.trim();
-  const desc = document.getElementById('prod-desc').value.trim();
-  const fileInput = document.getElementById('prod-image');
-  if (!fileInput.files.length) return alert("Select an image");
-
-  const file = fileInput.files[0];
-  const reader = new FileReader();
-  reader.onload = async (e) => {
-    const base64 = e.target.result.split(',')[1];
-    const formData = new FormData();
-    formData.append('action', 'uploadProduct');
-    formData.append('name', name);
-    formData.append('price', price);
-    formData.append('description', desc);
-    formData.append('fileName', file.name);
-    formData.append('mimeType', file.type);
-    formData.append('image', base64);
-
-    const res = await apiPost(formData);
-    if (res.ok) {
-      alert("Product uploaded successfully!");
-      ev.target.reset();
-      loadProducts();
-    } else {
-      alert("Upload failed: " + res.error);
+      if (ADMIN_EMAILS.includes(email) && password === ADMIN_PASSWORD) {
+        document.getElementById("login-container").classList.add("hidden");
+        document.getElementById("adminPanel").classList.remove("hidden");
+        loadProducts();
+      } else {
+        document.getElementById("loginMessage").innerText = "Invalid email or password!";
+      }
     }
-  };
-  reader.readAsDataURL(file);
-};
 
-/* ====== LOAD & DISPLAY PRODUCTS ====== */
-async function loadProducts() {
-  const list = await apiGet({ function: "getProducts" });
-  const container = document.getElementById('products-list');
-  if (!Array.isArray(list) || list.length === 0) {
-    container.innerHTML = "<p>No products yet.</p>";
-    return;
-  }
-  container.innerHTML = '<ul>' +
-    list.map((p, idx) =>
-      `<li><strong>${p.Name}</strong> — रु ${p.Price}<br/>
-         <img src="${p["Image URL"] || p.ImageURL}" alt="${p.Name}" style="height:50px;vertical-align:middle;"/>
-       </li>`
-    ).join('') +
-    '</ul>';
-}
+    async function loadProducts() {
+      const res = await fetch(`${SCRIPT_URL}?function=getProducts`);
+      const data = await res.json();
+      const tbody = document.querySelector("#productsTable tbody");
+      tbody.innerHTML = "";
+      data.forEach((p, i) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td><img src="${p.imageURL || ''}" alt=""></td>
+          <td>${p.name}</td>
+          <td>${p.price}</td>
+          <td>${p.description}</td>
+          <td>
+            <button class="btn" onclick="editProduct(${i})">Edit</button>
+            <button class="btn btn-danger" onclick="deleteProduct(${i})">Delete</button>
+          </td>`;
+        tbody.appendChild(row);
+      });
+    }
 
-/* ====== LOAD & DISPLAY REQUESTS ====== */
-async function loadRequests() {
-  const reqs = await apiGet({ function: "getRequests" });
-  const container = document.getElementById('requests-list');
-  if (!Array.isArray(reqs) || !reqs.length) {
-    container.innerText = "No requests yet.";
-    return;
-  }
-  container.innerHTML = '<table class="requests-table"><thead><tr><th>Time</th><th>Name</th><th>Phone</th><th>Address</th></tr></thead><tbody>' +
-    reqs.map(r =>
-      `<tr><td>${r.Timestamp}</td><td>${r["Customer Name"]}</td><td>${r["Phone Number"]}</td><td>${r.Address}</td></tr>`
-    ).join('') +
-    '</tbody></table>';
-}
-</script>
-</body>
-</html>
+    async function uploadImage(file) {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch(`${SCRIPT_URL}?function=uploadImage`, { method: "POST", body: formData });
+      const data = await res.json();
+      return data.url;
+    }
+
+    document.getElementById("productForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const rowIndex = document.getElementById("rowIndex").value;
+      const name = document.getElementById("name").value;
+      const price = document.getElementById("price").value;
+      const description = document.getElementById("description").value;
+      let imageURL = "";
+
+      const fileInput = document.getElementById("imageFile");
+      if (fileInput.files.lengt
