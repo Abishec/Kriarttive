@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kriattive - Traditional Crafts</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <h2>Kriattive</h2>
+                <span class="tagline">Traditional Crafts</span>
+            </div>
+            <div class="nav-actions">
+                <div id="connectionStatus" class="connection-status"></div>
+                <button id="adminLoginBtn" class="btn btn--outline btn--sm">Admin Login</button>
+                <button id="logoutBtn" class="btn btn--outline btn--sm hidden">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Admin Login Modal -->
+    <div id="loginModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Admin Login</h3>
+                <button id="closeLoginModal" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" id="loginEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-control" id="loginPassword" required>
+                    </div>
+                    <button type="submit" class="btn btn--primary btn--full-width">Login</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Admin Panel -->
+        <section id="adminPanel" class="admin-panel hidden">
+            <div class="container">
+                <div class="admin-header">
+                    <h2>Admin Dashboard</h2>
+                    <div class="admin-stats">
+                        <div class="stat-card">
+                            <span class="stat-label">Total Products</span>
+                            <span id="totalProducts" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Pending Requests</span>
+                            <span id="pendingRequests" class="stat-value">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="admin-tabs">
+                    <button id="productsTab" class="tab-btn active">Products</button>
+                    <button id="requestsTab" class="tab-btn">Customer Requests</button>
+                </div>
+
+                <!-- Products Management -->
+                <div id="productsSection" class="tab-content">
+                    <div class="section-header">
+                        <h3>Manage Products</h3>
+                        <button id="addProductBtn" class="btn btn--primary">Add New Product</button>
+                    </div>
+                    <div id="adminProductsList" class="admin-products-grid"></div>
+                </div>
+
+                <!-- Requests Management -->
+                <div id="requestsSection" class="tab-content hidden">
+                    <div class="section-header">
+                        <h3>Customer Requests</h3>
+                        <button id="exportRequestsBtn" class="btn btn--outline">Export Data</button>
+                    </div>
+                    <div id="requestsList" class="requests-list"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Public Storefront -->
+        <section id="storefront" class="storefront">
+            <div class="container">
+                <!-- Search and Filter -->
+                <div class="search-section">
+                    <div class="search-controls">
+                        <input type="text" id="searchInput" class="form-control search-input" placeholder="Search products...">
+                        <select id="priceFilter" class="form-control">
+                            <option value="">All Prices</option>
+                            <option value="0-2000">Under Rs. 2,000</option>
+                            <option value="2000-4000">Rs. 2,000 - 4,000</option>
+                            <option value="4000-6000">Rs. 4,000 - 6,000</option>
+                            <option value="6000+">Above Rs. 6,000</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Products Display -->
+                <div class="products-header">
+                    <h2>Our Traditional Crafts</h2>
+                    <p>Discover beautiful handmade products crafted with traditional techniques</p>
+                </div>
+                <div id="productsList" class="products-grid">
+                    <div class="loading-spinner">Loading products...</div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Add/Edit Product Modal -->
+    <div id="productModal" class="modal hidden">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h3 id="productModalTitle">Add New Product</h3>
+                <button id="closeProductModal" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="productForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Product Name</label>
+                            <input type="text" class="form-control" id="productName" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Price (Rs.)</label>
+                            <input type="number" class="form-control" id="productPrice" required min="1">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" id="productDescription" rows="3" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Product Image</label>
+                        <div id="imageUploadZone" class="image-upload-zone">
+                            <div class="upload-content">
+                                <div class="upload-icon">📁</div>
+                                <p>Drag and drop an image here, or click to select</p>
+                                <p class="upload-hint">Supports JPG, PNG, GIF, WEBP (max 5MB)</p>
+                            </div>
+                            <input type="file" id="imageInput" accept="image/*" hidden>
+                        </div>
+                        <div id="imagePreview" class="image-preview hidden">
+                            <img id="previewImg" src="" alt="Preview">
+                            <button type="button" id="removeImage" class="remove-image-btn">&times;</button>
+                        </div>
+                        <div id="uploadProgress" class="upload-progress hidden">
+                            <div class="progress-bar">
+                                <div id="progressFill" class="progress-fill"></div>
+                            </div>
+                            <span id="progressText">Uploading...</span>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" id="cancelProduct" class="btn btn--outline">Cancel</button>
+                        <button type="submit" class="btn btn--primary">Save Product</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Request Product Modal -->
+    <div id="requestModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Request Product</h3>
+                <button id="closeRequestModal" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="requestForm">
+                    <input type="hidden" id="requestProductName">
+                    <div class="form-group">
+                        <label class="form-label">Your Name</label>
+                        <input type="text" class="form-control" id="customerName" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Phone Number</label>
+                        <input type="tel" class="form-control" id="customerPhone" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Address</label>
+                        <textarea class="form-control" id="customerAddress" rows="2" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Message (Optional)</label>
+                        <textarea class="form-control" id="customerMessage" rows="3" placeholder="Any specific requirements or questions..."></textarea>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" id="cancelRequest" class="btn btn--outline">Cancel</button>
+                        <button type="submit" class="btn btn--primary">Submit Request</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications -->
+    <div id="notifications" class="notifications"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
