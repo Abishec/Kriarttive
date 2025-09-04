@@ -66,12 +66,12 @@ FIREBASE SETUP GUIDE - PLEASE READ CAREFULLY:
 // ==================== FIREBASE CONFIGURATION ====================
 // REPLACE THIS WITH YOUR ACTUAL FIREBASE CONFIG
 const firebaseConfig = {
-  apiKey: "your-api-key-here",
-  authDomain: "kriattive-xxx.firebaseapp.com",
-  projectId: "kriattive-xxx",
-  storageBucket: "kriattive-xxx.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "your-app-id-here"
+  apiKey: "AIzaSyDtyBu85VDMMCxgD0ofkRqQBX43TPZe2RU",
+  authDomain: "kiarttive.firebaseapp.com",
+  projectId: "kiarttive",
+  storageBucket: "kiarttive.firebasestorage.app",
+  messagingSenderId: "834263641940",
+  appId: "1:834263641940:web:e103643b5e1d8e752062c1"
 };
 
 // ==================== GLOBAL VARIABLES ====================
@@ -88,7 +88,7 @@ let db, auth, storage;
 function initializeFirebase() {
   try {
     // Check if Firebase config is still using placeholder values
-    if (firebaseConfig.apiKey === "your-api-key-here") {
+    if (firebaseConfig.apiKey === "AIzaSyDtyBu85VDMMCxgD0ofkRqQBX43TPZe2RU") {
       console.warn('Firebase configuration not set up. Using mock data for demonstration.');
       initializeMockData();
       return false;
