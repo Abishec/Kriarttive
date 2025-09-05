@@ -9,9 +9,9 @@ async function loadProducts() {
   products.forEach(p => {
     html += `
       <div class="product-card">
-        <img src="${p.Image}" alt="${p.Name}">
+        <img src="${p.Image}" alt="${p.Name}" class="product-image">
         <h3>${p.Name}</h3>
-        <p>Price: Rs. ${p.Price}</p>
+        <p class="price">Rs. ${p.Price}</p>
         <p>${p.Description}</p>
         <button onclick="openRequestModal('${p.Name}')">Request</button>
       </div>
@@ -19,28 +19,6 @@ async function loadProducts() {
   });
 
   document.getElementById("productsList").innerHTML = html;
-  document.getElementById("adminProductsList").innerHTML = html;
-}
-
-// Load Requests
-async function loadRequests() {
-  const res = await fetch(API_URL + "?sheet=Requests");
-  const requests = await res.json();
-
-  let html = "";
-  requests.forEach(r => {
-    html += `
-      <div class="request-card">
-        <h4>${r.Product} - ${r.Customer}</h4>
-        <p>Phone: ${r.Phone}</p>
-        <p>Address: ${r.Address}</p>
-        <p>Message: ${r.Message}</p>
-        <p>Status: ${r.Status}</p>
-      </div>
-    `;
-  });
-
-  document.getElementById("requestsList").innerHTML = html;
 }
 
 // Request Modal
@@ -72,19 +50,6 @@ document.getElementById("requestForm").addEventListener("submit", async (e) => {
   alert("Request submitted!");
   document.getElementById("requestModal").classList.add("hidden");
   e.target.reset();
-  loadRequests();
-});
-
-// Tab Switch
-document.getElementById("productsTab").addEventListener("click", () => {
-  document.getElementById("productsSection").classList.remove("hidden");
-  document.getElementById("requestsSection").classList.add("hidden");
-});
-
-document.getElementById("requestsTab").addEventListener("click", () => {
-  document.getElementById("productsSection").classList.add("hidden");
-  document.getElementById("requestsSection").classList.remove("hidden");
-  loadRequests();
 });
 
 // Init
