@@ -1,5 +1,4 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbwev4ld1Ewxi8L7X8E3TSASAlinGkoxyvRU-wZDFzzyU6iJn5hVWYDI6SYj4RvKpML8/exec";
-
 document.addEventListener("DOMContentLoaded", () => {
 const productsListEl = document.getElementById("productsList");
 const spinnerEl = document.getElementById("loadingSpinner");
@@ -87,9 +86,6 @@ requestForm.addEventListener("submit", async e => {
   e.preventDefault();
   const btn = e.submitter;
   btn.disabled = true;
-  
-  console.log("Form submission started"); // Debug log
-  
   const payload = {
     productName: requestProductInput.value,
     customerName: document.getElementById("customerName").value,
@@ -97,33 +93,24 @@ requestForm.addEventListener("submit", async e => {
     address: document.getElementById("customerAddress").value,
     message: document.getElementById("customerMessage").value
   };
-  
-  console.log("Payload:", payload); // Debug log
 
   try {
     const res = await fetch(API_URL, {
       method: "POST",
-      headers: { 
-        "Content-Type": "text/plain;charset=utf-8" // Changed content type to avoid CORS preflight
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
-    
-    console.log("Response status:", res.status); // Debug log
-    
     const result = await res.json();
-    console.log("Response result:", result); // Debug log
-    
     if (result.status === "success") {
       alert("🎉 Request submitted successfully!");
       closeModal();
     } else {
       console.error("Error response:", result);
-      alert("❌ Failed to submit request: " + (result.message || "Unknown error"));
+      alert("❌ Failed to submit request.");
     }
   } catch (err) {
     console.error("Submission error:", err);
-    alert("❌ Failed to submit request. Check console for details.");
+    alert("❌ Failed to submit request. Try again later.");
   } finally {
     btn.disabled = false;
   }
