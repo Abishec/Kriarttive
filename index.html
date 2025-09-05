@@ -1,76 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Kriattive — Traditional Crafts</title>
-
-  <!-- Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
-
-  <!-- Styles -->
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kriarttive - Your Store</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style-1.css">
 </head>
 <body>
-  <!-- HEADER -->
-  <header class="navbar">
-    <div class="nav-container">
-      <h1 class="brand">Kriattive</h1>
-      <p class="tagline">Traditional Crafts • Handcrafted • Nepali Roots</p>
+    <div class="navbar">
+        <div class="container">
+            <h1 class="brand">Kriarttive</h1>
+            <p class="tagline">Discover amazing products</p>
+        </div>
     </div>
-  </header>
 
-  <!-- MAIN -->
-  <main class="main-content">
-    <section class="storefront container">
-      <h2 class="section-title">Our Collection</h2>
-
-      <!-- Spinner -->
-      <div id="loadingSpinner" class="spinner" aria-hidden="true"></div>
-
-      <!-- Products Grid -->
-      <div id="productsList" class="products-grid" aria-live="polite"></div>
-    </section>
-  </main>
-
-  <!-- REQUEST MODAL (only modal form) -->
-  <div id="requestModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <div class="modal-backdrop"></div>
-    <div class="modal-card" role="document">
-      <header class="modal-header">
-        <h3 id="modalTitle">Request Product</h3>
-        <button id="closeRequestModal" class="close-btn" aria-label="Close">&times;</button>
-      </header>
-
-      <div class="modal-body">
-        <form id="requestForm">
-          <input type="hidden" id="requestProductName" name="productName">
-
-          <label class="sr-only" for="customerName">Your name</label>
-          <input id="customerName" name="customerName" type="text" placeholder="Your name" required>
-
-          <label class="sr-only" for="customerPhone">Phone</label>
-          <input id="customerPhone" name="phone" type="tel" placeholder="Phone number" required>
-
-          <label class="sr-only" for="customerAddress">Address</label>
-          <input id="customerAddress" name="address" type="text" placeholder="Address" required>
-
-          <label class="sr-only" for="customerMessage">Message</label>
-          <textarea id="customerMessage" name="message" rows="3" placeholder="Additional message (optional)"></textarea>
-
-          <button type="submit" class="btn btn--primary" id="submitRequestBtn">Submit Request</button>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <footer class="footer">
     <div class="container">
-      <small>© 2025 Kriattive — Crafted with ♥ in Nepal</small>
+        <h2 class="section-title">Our Products</h2>
+        
+        <div class="spinner" id="loadingSpinner"></div>
+        
+        <div class="products-grid" id="productsList">
+            <!-- Products will be loaded here -->
+        </div>
     </div>
-  </footer>
 
-  <!-- Script -->
-  <script src="app.js"></script>
+    <!-- Request Modal -->
+    <div class="modal hidden" id="requestModal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="modalTitle">Request Product</h3>
+                <button class="close-btn" id="closeRequestModal">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="requestForm">
+                    <input type="hidden" id="requestProductName">
+                    
+                    <label>Your Name *</label>
+                    <input type="text" id="customerName" required>
+                    
+                    <label>Phone Number *</label>
+                    <input type="tel" id="customerPhone" required>
+                    
+                    <label>Address *</label>
+                    <textarea id="customerAddress" required placeholder="Enter your delivery address"></textarea>
+                    
+                    <label>Additional Message</label>
+                    <textarea id="customerMessage" placeholder="Any special requirements or questions?"></textarea>
+                    
+                    <button type="submit" class="btn btn--primary" style="margin-top: 15px; width: 100%;">
+                        Submit Request
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Kriarttive. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="app-1.js"></script>
 </body>
 </html>
