@@ -1,27 +1,23 @@
-/* Spinner */
-.spinner {
-  border: 6px solid #f3f3f3;
-  border-top: 6px solid #8e44ad;
-  border-radius: 50%;
-  width: 50px;
-  height: 50px;
-  margin: 30px auto;
-  animation: spin 1s linear infinite;
-  display: none;
-}
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+/* Navbar */
+.navbar {
+  background: #fff;
+  padding: 20px 0;
+  text-align: center;
+  border-bottom: 2px solid #eee;
 }
 
-/* Ensure modal is centered */
-.modal {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.brand {
+  font-family: 'Playfair Display', serif;
+  font-size: 3rem;
+  margin: 0;
+  background: linear-gradient(90deg, #e67e22, #8e44ad, #3498db, #27ae60);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-/* Hide when closed */
-.modal.hidden {
-  display: none;
+.tagline {
+  display: block;
+  font-size: 1rem;
+  margin-top: 5px;
+  color: #555;
 }
