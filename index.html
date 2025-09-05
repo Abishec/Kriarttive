@@ -5,13 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kriattive - Traditional Crafts</title>
   <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Roboto&display=swap" rel="stylesheet">
 </head>
 <body>
+  <!-- Stylish Navbar -->
+  <header class="navbar">
+    <div class="nav-container">
+      <h1 class="brand">Kriattive</h1>
+      <span class="tagline">Traditional Crafts with Modern Elegance</span>
+    </div>
+  </header>
+
   <!-- Storefront -->
   <main class="main-content">
     <section id="storefront" class="storefront">
       <div class="container">
-        <h2>Our Traditional Crafts</h2>
+        <h2 class="section-title">Our Collection</h2>
+        
+        <!-- Loading Spinner -->
+        <div id="loadingSpinner" class="spinner"></div>
+
         <div id="productsList" class="products-grid"></div>
       </div>
     </section>
@@ -21,7 +34,7 @@
   <div id="requestModal" class="modal hidden">
     <div class="modal-content">
       <div class="modal-header">
-        <h3>Request Product</h3>
+        <h3 id="modalTitle">Request Product</h3>
         <button id="closeRequestModal" class="close-btn">&times;</button>
       </div>
       <div class="modal-body">
@@ -36,6 +49,10 @@
       </div>
     </div>
   </div>
+
+  <footer class="footer">
+    <p>© 2025 Kriattive | Crafted with ❤️ in Nepal</p>
+  </footer>
 
   <script src="app.js"></script>
 </body>
