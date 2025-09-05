@@ -1,59 +1,76 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kriattive - Traditional Crafts</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Kriattive — Traditional Crafts</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <!-- Styles -->
   <link rel="stylesheet" href="style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Roboto&display=swap" rel="stylesheet">
 </head>
 <body>
-  <!-- Stylish Navbar -->
+  <!-- HEADER -->
   <header class="navbar">
     <div class="nav-container">
       <h1 class="brand">Kriattive</h1>
-      <span class="tagline">Traditional Crafts with Modern Elegance</span>
+      <p class="tagline">Traditional Crafts • Handcrafted • Nepali Roots</p>
     </div>
   </header>
 
-  <!-- Storefront -->
+  <!-- MAIN -->
   <main class="main-content">
-    <section id="storefront" class="storefront">
-      <div class="container">
-        <h2 class="section-title">Our Collection</h2>
-        
-        <!-- Loading Spinner -->
-        <div id="loadingSpinner" class="spinner"></div>
+    <section class="storefront container">
+      <h2 class="section-title">Our Collection</h2>
 
-        <div id="productsList" class="products-grid"></div>
-      </div>
+      <!-- Spinner -->
+      <div id="loadingSpinner" class="spinner" aria-hidden="true"></div>
+
+      <!-- Products Grid -->
+      <div id="productsList" class="products-grid" aria-live="polite"></div>
     </section>
   </main>
 
-  <!-- Request Form Modal -->
-  <div id="requestModal" class="modal hidden">
-    <div class="modal-content">
-      <div class="modal-header">
+  <!-- REQUEST MODAL (only modal form) -->
+  <div id="requestModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-backdrop"></div>
+    <div class="modal-card" role="document">
+      <header class="modal-header">
         <h3 id="modalTitle">Request Product</h3>
-        <button id="closeRequestModal" class="close-btn">&times;</button>
-      </div>
+        <button id="closeRequestModal" class="close-btn" aria-label="Close">&times;</button>
+      </header>
+
       <div class="modal-body">
         <form id="requestForm">
-          <input type="hidden" id="requestProductName">
-          <input type="text" id="customerName" placeholder="Your Name" required>
-          <input type="text" id="customerPhone" placeholder="Phone" required>
-          <input type="text" id="customerAddress" placeholder="Address" required>
-          <textarea id="customerMessage" placeholder="Message"></textarea>
-          <button type="submit" class="btn btn--primary">Submit Request</button>
+          <input type="hidden" id="requestProductName" name="productName">
+
+          <label class="sr-only" for="customerName">Your name</label>
+          <input id="customerName" name="customerName" type="text" placeholder="Your name" required>
+
+          <label class="sr-only" for="customerPhone">Phone</label>
+          <input id="customerPhone" name="phone" type="tel" placeholder="Phone number" required>
+
+          <label class="sr-only" for="customerAddress">Address</label>
+          <input id="customerAddress" name="address" type="text" placeholder="Address" required>
+
+          <label class="sr-only" for="customerMessage">Message</label>
+          <textarea id="customerMessage" name="message" rows="3" placeholder="Additional message (optional)"></textarea>
+
+          <button type="submit" class="btn btn--primary" id="submitRequestBtn">Submit Request</button>
         </form>
       </div>
     </div>
   </div>
 
   <footer class="footer">
-    <p>© 2025 Kriattive | Crafted with ❤️ in Nepal</p>
+    <div class="container">
+      <small>© 2025 Kriattive — Crafted with ♥ in Nepal</small>
+    </div>
   </footer>
 
+  <!-- Script -->
   <script src="app.js"></script>
 </body>
 </html>
