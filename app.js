@@ -1,5 +1,5 @@
 // YOUR Apps Script web app endpoint (from you)
-const API_URL = "https://script.google.com/macros/s/AKfycbxD73EmiFmffmgy6TRMFd2MyZkZPozIMoIG_g6ldcghPAX1TNQhjtAllX9z-M8kcR0/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyxy4ZsMeSBQ1lts-ohqJpLWEb8V14k3wS5fimMgssDPm8tVh7rsRvDzL-uiT8AmSuy/exec";
 
 document.addEventListener("DOMContentLoaded", () => {
   const productsListEl = document.getElementById("productsList");
