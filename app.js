@@ -1,91 +1,82 @@
 /* app.js - REPLACE your existing file with this entire content.
-   1) IMPORTANT: set API_URL below to your deployed Apps Script Web App URL (full).
-      Example: "https://script.google.com/macros/s/AKfycbxxx.../exec"
-   2) Do NOT change other files. After replacing this file, push & reload your GitHub Pages site.
+   IMPORTANT: set API_URL to your deployed Apps Script Web App URL (full).
+   Example:
+     const API_URL = "https://script.google.com/macros/s/AKfycb.../exec";
 */
 
-// ---------- CONFIG ----------
-const API_URL = "https://script.google.com/macros/s/AKfycbyU0CMyRNG2OGZGfn--qHbssA_6Oop61PmJJhP04P22wxr3R_TlPx5PqsQD_CXtV52p/exec"; // <- REPLACE this with your deployed Apps Script URL
-const SHEET_ID = "1rz-bf1ju-VbIm4g0Pc8TzZVGCTBE5J-VBtMs3q7VCA0"; // your sheet id (already yours)
+const API_URL = "https://script.google.com/macros/s/AKfycbwtlif-GyGHpExAgEsy6CD9f2jCGsREsnL8sSi1W0aXXnB-lAXht6Da-Yrm-9wt_7HO/exec"; // <-- REPLACE with your Web App URL
+const SHEET_ID = "1rz-bf1ju-VbIm4g0Pc8TzZVGCTBE5J-VBtMs3q7VCA0"; // (unused here but kept for clarity)
 
-// ---------- Utils ----------
 function qs(id) { return document.getElementById(id); }
-function safeText(v) { return v === null || v === undefined ? "" : String(v); }
+function escapeHtml(s) { return (s || "").toString().replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 
 async function parseMaybeJSONorJSONP(text) {
-  // try plain JSON
   try { return JSON.parse(text); } catch (e) {}
-  // try to extract {...} from JSONP like callback({...});
-  const start = text.indexOf("{");
-  const end = text.lastIndexOf("}");
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
   if (start !== -1 && end !== -1 && end > start) {
     try { return JSON.parse(text.substring(start, end + 1)); } catch (e) {}
   }
-  // fallback: return raw text
-  return text;
+  return null;
 }
 
-// ---------- Product loading (via Sheets gviz) ----------
+/* ---------- Load products via your Apps Script Web App ---------- */
 async function loadProducts() {
-  const productsListEl = qs("productsList");
+  const productsList = qs("productsList");
   const spinner = qs("loadingSpinner");
-  productsListEl.innerHTML = "";
+  productsList.innerHTML = "";
   spinner.style.display = "block";
 
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Products`;
+  if (!API_URL || API_URL.includes("PASTE_YOUR_WEBAPP_URL_HERE")) {
+    productsList.innerHTML = `<div class="error">API_URL not set in app.js. Paste your Web App URL into API_URL.</div>`;
+    spinner.style.display = "none";
+    return;
+  }
+
   try {
+    const url = `${API_URL}?sheet=Products`;
     const res = await fetch(url, { cache: "no-store" });
     const text = await res.text();
-    const json = (function _strip(txt) {
-      const i = txt.indexOf("{");
-      const j = txt.lastIndexOf("}");
-      if (i !== -1 && j !== -1) return JSON.parse(txt.substring(i, j + 1));
-      return JSON.parse(txt);
-    })(text);
+    const parsed = await parseMaybeJSONorJSONP(text);
 
-    const cols = json.table.cols.map(c => (c.label || c.id || "").trim());
-    const rows = json.table.rows || [];
-
-    if (!rows.length) {
-      productsListEl.innerHTML = '<div class="empty">No products found.</div>';
+    if (!parsed) {
+      productsList.innerHTML = `<div class="error">Failed to parse product data. Response: ${escapeHtml(text.slice(0,400))}</div>`;
       return;
     }
 
-    const products = rows.map(r => {
-      const obj = {};
-      (r.c || []).forEach((cell, i) => { obj[cols[i] || ("col" + i)] = cell ? cell.v : ""; });
-      return obj;
-    });
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      productsList.innerHTML = `<div class="empty">No products found.</div>`;
+      return;
+    }
 
-    // render cards
-    products.forEach(prod => {
-      const name = safeText(prod.Name || prod.name || prod.Product || prod.product || prod.Title || prod.title || "");
-      const price = safeText(prod.Price || prod.price || prod.Price_NPR || "");
-      const desc = safeText(prod.Description || prod.description || prod.Desc || "");
-      const img = safeText(prod.Image || prod.image || prod.img || prod.ImageURL || "");
-      const model = name;
+    // Render cards
+    parsed.forEach(prod => {
+      const name = escapeHtml(prod.Name || prod.name || prod.Product || prod.product || "");
+      const price = escapeHtml(prod.Price || prod.price || "");
+      const desc = escapeHtml(prod.Description || prod.description || "");
+      const img = escapeHtml(prod.Image || prod.image || prod.ImageURL || "");
 
       const card = document.createElement("article");
       card.className = "card";
       card.innerHTML = `
         <div class="card-media">
-          <img loading="lazy" onerror="this.style.opacity=0.4;this.alt='image missing';" src="${img}" alt="${name}">
+          <img loading="lazy" src="${img}" alt="${name}" onerror="this.style.opacity=0.45;this.alt='image missing';">
         </div>
         <div class="card-body">
           <h4 class="card-title">${name}</h4>
           <p class="card-desc">${desc}</p>
           <div class="card-footer">
             <div class="price">${price ? "₹ " + price : ""}</div>
-            <button class="btn request-btn" data-product="${escapeHtml(model)}">Request</button>
+            <button class="btn request-btn" data-product="${escapeHtml(name)}">Request</button>
           </div>
         </div>
       `;
-      productsListEl.appendChild(card);
+      productsList.appendChild(card);
     });
 
-    // attach click handlers for request buttons (event delegation)
-    productsListEl.addEventListener("click", (e) => {
-      const btn = e.target.closest(".request-btn");
+    // Attach request button listeners (delegation)
+    productsList.addEventListener("click", (ev) => {
+      const btn = ev.target.closest(".request-btn");
       if (!btn) return;
       const productName = btn.getAttribute("data-product") || "";
       openRequestModal(productName);
@@ -93,19 +84,13 @@ async function loadProducts() {
 
   } catch (err) {
     console.error("loadProducts error:", err);
-    productsListEl.innerHTML = `<div class="error">Failed to load products. Check sheet visibility or network.</div>`;
+    productsList.innerHTML = `<div class="error">Failed to load products. Check API_URL and Apps Script deployment.</div>`;
   } finally {
     spinner.style.display = "none";
   }
 }
 
-// small helper to avoid XSS when injecting attributes
-function escapeHtml(s) {
-  if (!s) return "";
-  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-}
-
-// ---------- Modal & form ----------
+/* ---------- Modal & submit logic ---------- */
 function openRequestModal(productName) {
   qs("modalTitle").textContent = `Request: ${productName}`;
   qs("requestProductName").value = productName;
@@ -119,9 +104,10 @@ function closeRequestModal() {
   qs("requestModalBackdrop").classList.add("hidden");
 }
 
-// ---------- Submit request via GET (no preflight) ----------
 async function submitRequestViaGet(formData) {
-  // Build params including sheet=Requests & method=save to match server logic
+  if (!API_URL || API_URL.includes("PASTE_YOUR_WEBAPP_URL_HERE")) {
+    throw new Error("API_URL is not set in app.js. Paste your Apps Script Web App URL into API_URL.");
+  }
   const params = new URLSearchParams({
     sheet: "Requests",
     method: "save",
@@ -132,32 +118,31 @@ async function submitRequestViaGet(formData) {
     message: formData.message || ""
   }).toString();
 
-  const fullUrl = (API_URL || "").trim();
-  if (!fullUrl || fullUrl.includes("PASTE_YOUR_WEBAPP_URL_HERE")) {
-    throw new Error("API_URL is not set. Paste your Apps Script Web App URL into app.js (API_URL).");
-  }
-
-  const url = `${fullUrl}?${params}`;
-  const r = await fetch(url, { method: "GET", cache: "no-store" });
-  const text = await r.text();
+  const url = `${API_URL}?${params}`;
+  const res = await fetch(url, { method: "GET", cache: "no-store" });
+  const text = await res.text();
   const parsed = await parseMaybeJSONorJSONP(text);
   return parsed;
 }
 
-// ---------- DOM wiring ----------
+/* ---------- Wire DOM ---------- */
 document.addEventListener("DOMContentLoaded", () => {
-  // elements assumed by your HTML
-  const closeBtns = document.querySelectorAll("[data-close-modal]");
-  closeBtns.forEach(b => b.addEventListener("click", closeRequestModal));
+  if (!qs("productsList")) {
+    console.warn("productsList element missing in DOM");
+    return;
+  }
+
+  // modal close
+  document.querySelectorAll("[data-close-modal]").forEach(b => b.addEventListener("click", closeRequestModal));
   qs("requestModalBackdrop").addEventListener("click", closeRequestModal);
 
   qs("requestForm").addEventListener("submit", async (ev) => {
     ev.preventDefault();
-    const submitBtn = qs("submitRequestBtn");
-    submitBtn.disabled = true;
-    submitBtn.textContent = "Submitting...";
+    const btn = qs("submitRequestBtn");
+    btn.disabled = true;
+    btn.textContent = "Submitting...";
 
-    const data = {
+    const payload = {
       productName: qs("requestProductName").value.trim(),
       customerName: qs("customerName").value.trim(),
       phone: qs("customerPhone").value.trim(),
@@ -166,25 +151,24 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     try {
-      const res = await submitRequestViaGet(data);
-      // res may be {status:"success"} or an array/object depending on endpoint
-      const ok = (res && (res.status === "success" || res.status === "ok")) || (typeof res === "object" && !Array.isArray(res) && res !== null && res.status !== "error");
+      const result = await submitRequestViaGet(payload);
+      const ok = result && (result.status === "success" || result.status === "ok");
       if (ok) {
-        alert("✅ Request submitted successfully. We will contact you soon.");
+        alert("✅ Request submitted. We'll contact you soon.");
         closeRequestModal();
       } else {
-        console.warn("submit result", res);
-        throw new Error((res && res.message) ? res.message : "Server returned an error or unexpected response");
+        console.warn("submit result unexpected:", result);
+        throw new Error(result && result.message ? result.message : "Server returned error");
       }
     } catch (err) {
-      console.error("submitRequest error:", err);
+      console.error("submit error:", err);
       alert("⚠️ Failed to submit request. Please try again.");
     } finally {
-      submitBtn.disabled = false;
-      submitBtn.textContent = "Submit Request";
+      btn.disabled = false;
+      btn.textContent = "Submit Request";
     }
   });
 
-  // initial load
+  // load products immediately
   loadProducts();
 });
