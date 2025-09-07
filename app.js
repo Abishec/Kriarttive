@@ -1,164 +1,190 @@
-// YOUR Apps Script web app endpoint (from you)
-const API_URL = "https://script.google.com/macros/s/AKfycbxzLC9DRz14IIgWAWX-CLeT1e59hwcUZZBBlMm28qIWCAhQyQoM5-Iz4UO_ZscHtqXs/exec";
+/* app.js - REPLACE your existing file with this entire content.
+   1) IMPORTANT: set API_URL below to your deployed Apps Script Web App URL (full).
+      Example: "https://script.google.com/macros/s/AKfycbxxx.../exec"
+   2) Do NOT change other files. After replacing this file, push & reload your GitHub Pages site.
+*/
 
-document.addEventListener("DOMContentLoaded", () => {
-  const productsListEl = document.getElementById("productsList");
-  const spinnerEl = document.getElementById("loadingSpinner");
-  const modalEl = document.getElementById("requestModal");
-  const modalTitleEl = document.getElementById("modalTitle");
-  const requestProductInput = document.getElementById("requestProductName");
-  const requestForm = document.getElementById("requestForm");
-  const closeModalBtn = document.getElementById("closeRequestModal");
+// ---------- CONFIG ----------
+const API_URL = "https://script.google.com/macros/s/AKfycbyU0CMyRNG2OGZGfn--qHbssA_6Oop61PmJJhP04P22wxr3R_TlPx5PqsQD_CXtV52p/exec"; // <- REPLACE this with your deployed Apps Script URL
+const SHEET_ID = "1rz-bf1ju-VbIm4g0Pc8TzZVGCTBE5J-VBtMs3q7VCA0"; // your sheet id (already yours)
 
-  // Helper: safely get possible field names from sheet row object
-  function getField(obj, candidates = []) {
-    for (const c of candidates) {
-      if (obj[c] !== undefined && obj[c] !== null && obj[c] !== "") return obj[c];
-    }
-    // try lowercase keys fallback
-    const keys = Object.keys(obj || {});
-    for (const key of keys) {
-      const lk = key.toLowerCase();
-      for (const c of candidates) {
-        if (lk === c.toLowerCase()) return obj[key];
-      }
-    }
-    return "";
+// ---------- Utils ----------
+function qs(id) { return document.getElementById(id); }
+function safeText(v) { return v === null || v === undefined ? "" : String(v); }
+
+async function parseMaybeJSONorJSONP(text) {
+  // try plain JSON
+  try { return JSON.parse(text); } catch (e) {}
+  // try to extract {...} from JSONP like callback({...});
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start !== -1 && end !== -1 && end > start) {
+    try { return JSON.parse(text.substring(start, end + 1)); } catch (e) {}
   }
+  // fallback: return raw text
+  return text;
+}
 
-  // Render a product card (square board + image)
-  function productCardHTML({ name, price, description, imageUrl }) {
-    return `
-      <article class="product-card">
-        <div class="image-wrap" aria-hidden="true">
-          <img src="${imageUrl || ''}" alt="${escapeHtml(name)}" loading="lazy" onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22><rect fill=%22%23f3f3f3%22 width=%22200%22 height=%22200%22></rect><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22Roboto%22 font-size=%2214%22 fill=%22%23888%22>No image</text></svg>';">
+// ---------- Product loading (via Sheets gviz) ----------
+async function loadProducts() {
+  const productsListEl = qs("productsList");
+  const spinner = qs("loadingSpinner");
+  productsListEl.innerHTML = "";
+  spinner.style.display = "block";
+
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Products`;
+  try {
+    const res = await fetch(url, { cache: "no-store" });
+    const text = await res.text();
+    const json = (function _strip(txt) {
+      const i = txt.indexOf("{");
+      const j = txt.lastIndexOf("}");
+      if (i !== -1 && j !== -1) return JSON.parse(txt.substring(i, j + 1));
+      return JSON.parse(txt);
+    })(text);
+
+    const cols = json.table.cols.map(c => (c.label || c.id || "").trim());
+    const rows = json.table.rows || [];
+
+    if (!rows.length) {
+      productsListEl.innerHTML = '<div class="empty">No products found.</div>';
+      return;
+    }
+
+    const products = rows.map(r => {
+      const obj = {};
+      (r.c || []).forEach((cell, i) => { obj[cols[i] || ("col" + i)] = cell ? cell.v : ""; });
+      return obj;
+    });
+
+    // render cards
+    products.forEach(prod => {
+      const name = safeText(prod.Name || prod.name || prod.Product || prod.product || prod.Title || prod.title || "");
+      const price = safeText(prod.Price || prod.price || prod.Price_NPR || "");
+      const desc = safeText(prod.Description || prod.description || prod.Desc || "");
+      const img = safeText(prod.Image || prod.image || prod.img || prod.ImageURL || "");
+      const model = name;
+
+      const card = document.createElement("article");
+      card.className = "card";
+      card.innerHTML = `
+        <div class="card-media">
+          <img loading="lazy" onerror="this.style.opacity=0.4;this.alt='image missing';" src="${img}" alt="${name}">
         </div>
-        <div class="product-body">
-          <h3 class="product-name">${escapeHtml(name)}</h3>
-          <div class="price">Rs. ${escapeHtml(price)}</div>
-          <p class="product-desc">${escapeHtml(description)}</p>
-          <div class="product-actions">
-            <button class="btn btn--primary" data-action="request" data-product="${escapeAttr(name)}">Request</button>
+        <div class="card-body">
+          <h4 class="card-title">${name}</h4>
+          <p class="card-desc">${desc}</p>
+          <div class="card-footer">
+            <div class="price">${price ? "₹ " + price : ""}</div>
+            <button class="btn request-btn" data-product="${escapeHtml(model)}">Request</button>
           </div>
         </div>
-      </article>
-    `;
+      `;
+      productsListEl.appendChild(card);
+    });
+
+    // attach click handlers for request buttons (event delegation)
+    productsListEl.addEventListener("click", (e) => {
+      const btn = e.target.closest(".request-btn");
+      if (!btn) return;
+      const productName = btn.getAttribute("data-product") || "";
+      openRequestModal(productName);
+    });
+
+  } catch (err) {
+    console.error("loadProducts error:", err);
+    productsListEl.innerHTML = `<div class="error">Failed to load products. Check sheet visibility or network.</div>`;
+  } finally {
+    spinner.style.display = "none";
+  }
+}
+
+// small helper to avoid XSS when injecting attributes
+function escapeHtml(s) {
+  if (!s) return "";
+  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+// ---------- Modal & form ----------
+function openRequestModal(productName) {
+  qs("modalTitle").textContent = `Request: ${productName}`;
+  qs("requestProductName").value = productName;
+  qs("requestModal").classList.remove("hidden");
+  qs("requestModalBackdrop").classList.remove("hidden");
+}
+
+function closeRequestModal() {
+  qs("requestForm").reset();
+  qs("requestModal").classList.add("hidden");
+  qs("requestModalBackdrop").classList.add("hidden");
+}
+
+// ---------- Submit request via GET (no preflight) ----------
+async function submitRequestViaGet(formData) {
+  // Build params including sheet=Requests & method=save to match server logic
+  const params = new URLSearchParams({
+    sheet: "Requests",
+    method: "save",
+    productName: formData.productName || "",
+    customerName: formData.customerName || "",
+    phone: formData.phone || "",
+    address: formData.address || "",
+    message: formData.message || ""
+  }).toString();
+
+  const fullUrl = (API_URL || "").trim();
+  if (!fullUrl || fullUrl.includes("PASTE_YOUR_WEBAPP_URL_HERE")) {
+    throw new Error("API_URL is not set. Paste your Apps Script Web App URL into app.js (API_URL).");
   }
 
-  // Basic HTML escaping for safety
-  function escapeHtml(str = "") {
-    return String(str)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#39;");
-  }
-  function escapeAttr(s = "") {
-    return String(s).replaceAll('"', '&quot;').replaceAll("'", "&#39;");
-  }
+  const url = `${fullUrl}?${params}`;
+  const r = await fetch(url, { method: "GET", cache: "no-store" });
+  const text = await r.text();
+  const parsed = await parseMaybeJSONorJSONP(text);
+  return parsed;
+}
 
-  // Load products from sheet
-  async function loadProducts() {
-    spinnerEl.style.display = "block";
-    productsListEl.innerHTML = ""; // clear
-    try {
-      const res = await fetch(`${API_URL}?sheet=Products`, { cache: "no-store" });
-      if (!res.ok) throw new Error("Network response not OK");
-      const rows = await res.json();
+// ---------- DOM wiring ----------
+document.addEventListener("DOMContentLoaded", () => {
+  // elements assumed by your HTML
+  const closeBtns = document.querySelectorAll("[data-close-modal]");
+  closeBtns.forEach(b => b.addEventListener("click", closeRequestModal));
+  qs("requestModalBackdrop").addEventListener("click", closeRequestModal);
 
-      // rows is an array of objects where keys are your sheet headers
-      if (!Array.isArray(rows) || rows.length === 0) {
-        productsListEl.innerHTML = `<p class="empty">No products available right now.</p>`;
-        return;
-      }
-
-      const html = rows.map(row => {
-        // try to read fields with multiple possible header names
-        const name = getField(row, ["Name", "Product", "Title"]);
-        const price = getField(row, ["Price", "price", "Cost"]);
-        const description = getField(row, ["Description", "Desc", "description"]);
-        const imageUrl = getField(row, ["Image", "Image URL", "ImageUrl", "image", "image_url"]);
-        return productCardHTML({ name, price, description, imageUrl });
-      }).join("");
-
-      productsListEl.innerHTML = html;
-    } catch (err) {
-      console.error("Load products error:", err);
-      productsListEl.innerHTML = `<p class="error">Failed to load products. Please try later.</p>`;
-    } finally {
-      spinnerEl.style.display = "none";
-    }
-  }
-
-  // Event delegation for product request buttons
-  productsListEl.addEventListener("click", (ev) => {
-    const btn = ev.target.closest('button[data-action="request"]');
-    if (!btn) return;
-    const productName = btn.dataset.product || "";
-    openRequestModal(productName);
-  });
-
-  // Open modal
-  function openRequestModal(productName) {
-    requestProductInput.value = productName;
-    modalTitleEl.textContent = `Request: ${productName}`;
-    modalEl.classList.remove("hidden");
-    // focus first input
-    setTimeout(() => document.getElementById("customerName").focus(), 80);
-  }
-
-  // Close modal
-  function closeModal() {
-    modalEl.classList.add("hidden");
-  }
-  closeModalBtn.addEventListener("click", closeModal);
-
-  // Click outside modal to close
-  modalEl.addEventListener("click", (e) => {
-    // If click on backdrop or modal root (not inside modal-card)
-    if (e.target === modalEl || e.target.classList.contains("modal-backdrop")) {
-      closeModal();
-    }
-  });
-
-  // Escape key closes modal
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !modalEl.classList.contains("hidden")) closeModal();
-  });
-
-  // Submit request — writes to Requests sheet via Apps Script POST
-  requestForm.addEventListener("submit", async (ev) => {
+  qs("requestForm").addEventListener("submit", async (ev) => {
     ev.preventDefault();
-    const submitBtn = document.getElementById("submitRequestBtn");
+    const submitBtn = qs("submitRequestBtn");
     submitBtn.disabled = true;
-    const payload = {
-      productName: document.getElementById("requestProductName").value || "",
-      customerName: document.getElementById("customerName").value || "",
-      phone: document.getElementById("customerPhone").value || "",
-      address: document.getElementById("customerAddress").value || "",
-      message: document.getElementById("customerMessage").value || ""
+    submitBtn.textContent = "Submitting...";
+
+    const data = {
+      productName: qs("requestProductName").value.trim(),
+      customerName: qs("customerName").value.trim(),
+      phone: qs("customerPhone").value.trim(),
+      address: qs("customerAddress").value.trim(),
+      message: qs("customerMessage").value.trim()
     };
 
     try {
-      const res = await fetch(`${API_URL}?sheet=Requests`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      if (!res.ok) throw new Error("Network error");
-      // success
-      alert("✅ Request submitted. We will contact you soon.");
-      closeModal();
-      requestForm.reset();
+      const res = await submitRequestViaGet(data);
+      // res may be {status:"success"} or an array/object depending on endpoint
+      const ok = (res && (res.status === "success" || res.status === "ok")) || (typeof res === "object" && !Array.isArray(res) && res !== null && res.status !== "error");
+      if (ok) {
+        alert("✅ Request submitted successfully. We will contact you soon.");
+        closeRequestModal();
+      } else {
+        console.warn("submit result", res);
+        throw new Error((res && res.message) ? res.message : "Server returned an error or unexpected response");
+      }
     } catch (err) {
-      console.error("Submit request error:", err);
+      console.error("submitRequest error:", err);
       alert("⚠️ Failed to submit request. Please try again.");
     } finally {
       submitBtn.disabled = false;
+      submitBtn.textContent = "Submit Request";
     }
   });
 
-  // init
+  // initial load
   loadProducts();
 });
