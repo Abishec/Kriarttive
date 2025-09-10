@@ -4,7 +4,7 @@
      const API_URL = "https://script.google.com/macros/s/AKfycb.../exec";
 */
 
-const API_URL = "https://script.google.com/macros/s/AKfycbwtlif-GyGHpExAgEsy6CD9f2jCGsREsnL8sSi1W0aXXnB-lAXht6Da-Yrm-9wt_7HO/exec"; // <-- REPLACE with your Web App URL
+const API_URL = "https://script.google.com/macros/s/AKfycbxACfpvhqqxSUBsrzcD_gaOYQ3QTZgbb_HHAeVKp6jiiopa4fBUYotahSJBYxFfgecU/exec"; // <-- REPLACE with your Web App URL
 const SHEET_ID = "1rz-bf1ju-VbIm4g0Pc8TzZVGCTBE5J-VBtMs3q7VCA0"; // (unused here but kept for clarity)
 
 function qs(id) { return document.getElementById(id); }
