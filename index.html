@@ -1,0 +1,109 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Shop</title>
+<style>
+  body{font-family:Arial,Helvetica,sans-serif;padding:16px;max-width:1000px;margin:auto}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+  .card{border:1px solid #ddd;padding:12px;border-radius:8px}
+  .card img{width:100%;height:140px;object-fit:cover;border-radius:6px}
+  .btn{display:inline-block;padding:8px 12px;border-radius:6px;border:0;background:#007bff;color:#fff;cursor:pointer}
+  .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.5)}
+  .modal .box{background:#fff;padding:16px;border-radius:8px;max-width:420px;width:100%}
+  label{display:block;margin-top:8px;font-size:14px}
+  input,textarea{width:100%;padding:8px;margin-top:4px;border-radius:6px;border:1px solid #ccc}
+</style>
+</head>
+<body>
+<h1>Products</h1>
+<div id="grid" class="grid"></div>
+
+<!-- Modal -->
+<div id="modal" class="modal">
+  <div class="box">
+    <h3 id="modalTitle">Request to buy</h3>
+    <form id="orderForm">
+      <input type="hidden" id="productId">
+      <input type="hidden" id="productName">
+      <label>Name<input id="custName" required></label>
+      <label>Phone<input id="custPhone" required></label>
+      <label>Address<textarea id="custAddress" rows="3" required></textarea></label>
+      <label>Note (optional)<textarea id="custNote" rows="2"></textarea></label>
+      <div style="margin-top:12px;text-align:right">
+        <button type="button" id="closeBtn" class="btn" style="background:#6c757d">Cancel</button>
+        <button type="submit" class="btn">Send Request</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyaGkJRZYhPoTs7k41gMAG3lHGKvAd99ucIdNZRESV9JqVZ8FR1t2ryrouvKAFYEKPG/exec'; // paste your Apps Script web app URL here
+
+async function loadProducts(){
+  const res = await fetch(APPS_SCRIPT_URL);
+  const items = await res.json();
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  items.forEach(item => {
+    const card = document.createElement('div'); card.className='card';
+    const img = document.createElement('img');
+    img.src = item.image || 'https://via.placeholder.com/300x200?text=No+Image';
+    const title = document.createElement('h4'); 
+    // display price with currency if numeric
+    var priceText = (item.price !== undefined && item.price !== null && item.price !== '') ? '₹' + item.price : '';
+    title.textContent = (item.name || '') + (priceText ? ' — ' + priceText : '');
+    const desc = document.createElement('p'); desc.textContent = item.description || '';
+    const btn = document.createElement('button'); btn.className='btn'; btn.textContent='Request to Buy';
+    btn.onclick = ()=> openModal(item);
+    card.appendChild(img); card.appendChild(title); card.appendChild(desc); card.appendChild(btn);
+    grid.appendChild(card);
+  });
+}
+
+function openModal(item){
+  document.getElementById('modal').style.display = 'flex';
+  document.getElementById('productId').value = item.id || item.name || '';
+  document.getElementById('productName').value = item.name || '';
+  document.getElementById('modalTitle').textContent = 'Request: ' + (item.name || '');
+}
+
+document.getElementById('closeBtn').onclick = ()=> document.getElementById('modal').style.display='none';
+
+document.getElementById('orderForm').onsubmit = async (e) => {
+  e.preventDefault();
+  const payload = {
+    name: document.getElementById('custName').value.trim(),
+    phone: document.getElementById('custPhone').value.trim(),
+    address: document.getElementById('custAddress').value.trim(),
+    note: document.getElementById('custNote').value.trim(),
+    productId: document.getElementById('productId').value,
+    productName: document.getElementById('productName').value
+  };
+  if(!payload.name || !payload.phone || !payload.address){ alert('Please fill required fields'); return; }
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if(data.status === 'ok'){
+      alert('Request sent — owner will contact you soon!');
+      document.getElementById('modal').style.display='none';
+      document.getElementById('orderForm').reset();
+    } else {
+      alert('Error: ' + (data.message || 'Could not send request'));
+    }
+  } catch(err) {
+    alert('Network error. Try again later.');
+    console.error(err);
+  }
+};
+
+loadProducts();
+</script>
+</body>
+</html>
